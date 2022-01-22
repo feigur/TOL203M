@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)https://hjalmtyr.github.io/WebGL-forrit/Angel/points.html -->
+<html><link type="text/css" rel="stylesheet" id="dark-mode-custom-link"><link type="text/css" rel="stylesheet" id="dark-mode-general-link"><style lang="en" type="text/css" id="dark-mode-custom-style"></style><style lang="en" type="text/css" id="dark-mode-native-style"></style><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script id="vertex-shader" type="x-shader/x-vertex">
+
+attribute vec4 vPosition;
+
+void
+main()
+{
+    // Stækkum punktana svo þeir sjáist!
+    gl_PointSize = 5.0;
+    gl_Position = vPosition;
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+
+varying vec4 fColor;
+void
+main()
+{
+    // Teiknar gula punkta
+    gl_FragColor = vec4( 1.0, 1.0, 0.0, 1.0 );
+}
+</script>
+
+<script type="text/javascript" src="./points_files/webgl-utils.js.download"></script>
+<script type="text/javascript" src="./points_files/initShaders.js.download"></script>
+<script type="text/javascript" src="./points_files/MV.js.download"></script>
+<script type="text/javascript" src="./points_files/points.js.download"></script>
+
+</head><body>
+<canvas id="gl-canvas" width="512" height="512">
+</canvas>
+
+
+</body></html>
