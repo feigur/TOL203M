@@ -23,7 +23,8 @@ Syntax highlighted code block
 
 **Bold** and _Italic_ and `Code` text
 
-[Link](https://github.com/feigur/TOL203M/blob/main/7_shape/7-shape-fan.html) and ![Image](src)
+[Link]https://github.com/feigur/TOL203M/blob/main/7_shape/7-shape-fan.html
+and ![Image](src)
 ```
 
 For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
