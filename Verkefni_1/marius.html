@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<!-- saved from url=(0061)https://hjalmtyr.github.io/WebGL-forrit/Angel/box-bounce.html -->
+<html><link type="text/css" rel="stylesheet" id="dark-mode-custom-link"><link type="text/css" rel="stylesheet" id="dark-mode-general-link"><style lang="en" type="text/css" id="dark-mode-custom-style"></style><style lang="en" type="text/css" id="dark-mode-native-style"></style><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script id="vertex-shader" type="x-shader/x-vertex">
+
+uniform vec2 boxPos;
+attribute vec4 vPosition;
+
+void main()
+{
+    vec4 t = vPosition;
+    
+    t.xy += boxPos;
+    
+    gl_Position = t;
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+
+uniform vec4 rcolor;
+void
+main()
+{
+    gl_FragColor = rcolor;
+}
+</script>
+
+<script type="text/javascript" src="./marius/webgl-utils.js"></script>
+<script type="text/javascript" src="./marius/initShaders.js"></script>
+<script type="text/javascript" src="./marius/MV.js"></script>
+<script type="text/javascript" src="./marius/marius.js"></script>
+
+</head><body>
+<canvas id="gl-canvas" width="800" height="800"></canvas>
+
+
+</body></html>
