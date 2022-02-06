@@ -156,10 +156,16 @@ window.onload = function init() {
 					pX = 0;
 					player = character_stop
 				}
+				if (pX == 0){
+					player = character_stop
+				}
 				break;
 			case 39:
 				if (pX > 0){
 					pX = 0;
+					player = character_stop
+				}
+				if (pX == 0){
 					player = character_stop
 				}
 				break;
