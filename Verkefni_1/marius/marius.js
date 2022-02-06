@@ -45,6 +45,7 @@ var boxRad = 0.05;
 var character_left = new Float32Array([-0.03, -0.00, 0.03, -0.00, 0.03, 0.06]);
 var character_right = new Float32Array([-0.03, -0.00, 0.03, -0.00, -0.03, 0.06]);
 var character_stop = [ vec2(  -0.03, 0.0 ), vec2(  0.03,  0.0 ), vec2(  0.0, 0.06 ) ];
+var character_down = [ vec2(  -0.03, 0.0 ), vec2(  0.03,  0.0 ), vec2(  0.0, -0.06 ) ];
 var enemie = new Float32Array([-0.03, -0.00, 0.03, -0.00, 0.03, 0.06,0.03,0.06,-0.03,0.06,-0.03,0.0]);
 var floor = new	Float32Array([-10,0,-10,-10,10,0,10,-10,-10,-10,10,0,0.4,0.0,0.4,0.1,0.8,0.1,0.4,0.0,0.8,0.0,0.8,0.1]);
 
@@ -185,6 +186,7 @@ function reset_game(){
 	win = false
 	pY = 0;
 	playerColor = Blue;
+	player = character_stop
 	enemies_box1 = vec2(-0.40,0.0);
 	enemies_box2 = vec2(-0.80,0.0);
 	eX1 = -0.005;
@@ -204,7 +206,7 @@ function render(bufferid1, bufferid2) {
 	else if (((box[0]+0.02 <= 0.4) || (box[0]-0.02  >= 0.8)) && box[1] == 0.1){
 		pY = -0.02
 	}
-    else if ((box[1] + pY) <= 0){
+    else if ((box[1] + pY) < 0 && dead == false){
 		pY = 0;
 		box[1] = 0;
 	}
@@ -225,16 +227,9 @@ function render(bufferid1, bufferid2) {
 	}
 	else if(box[0] < (enemies_box2[0]+0.03+0.02) && box[0] > (enemies_box2 [0]-0.03-0.02) && box[1] < 0.06){
 		playerColor = Red;
-		pY = 0.01
-		dead = true
-	}
-	if (dead == true || win == true){
 		pY = 0.01;
-		pX = 0.0;
-		player = character_stop;
-		if(box[1] >= 1){
-			reset_game();
-		}
+		dead = true;
+		player = character_down;
 	}
 	if (enemies_box1[0]-0.06 <= enemies_box2[0] && enemies_box1[0] > enemies_box2[0]){
 		eX1 = 0.005;
@@ -255,6 +250,18 @@ function render(bufferid1, bufferid2) {
 		win = true;
 		playerColor = White;
 	}
+	if (dead == true || win == true){
+		pY = 0.01;
+		pX = 0.0;
+		player = character_stop;
+		if(dead == true){
+			pY = -0.01;
+			player = character_down;
+		}
+		if(box[1] >= 1 || box[1] <= -1){
+			reset_game();
+		}
+	}
 
     // Uppfæra staðsetningu
     box[0] += pX;
@@ -267,12 +274,7 @@ function render(bufferid1, bufferid2) {
     gl.clear( gl.COLOR_BUFFER_BIT );
 	
     //
-	gl.bindBuffer( gl.ARRAY_BUFFER, bufferPlayer );
-	gl.bufferData( gl.ARRAY_BUFFER, flatten(player), gl.DYNAMIC_DRAW );
-    gl.vertexAttribPointer( vPosition, 2, gl.FLOAT, false, 0, 0 );
-    gl.uniform2fv( locBox, flatten(box) );
-	gl.uniform4fv( locColor, flatten(playerColor) );
-    gl.drawArrays( gl.TRIANGLES, 0, 3 );
+	
 	
 	gl.bindBuffer( gl.ARRAY_BUFFER, bufferFloor );
     gl.vertexAttribPointer( vPosition, 2, gl.FLOAT, false, 0, 0 );
@@ -303,6 +305,13 @@ function render(bufferid1, bufferid2) {
 	gl.uniform4fv( locColor, flatten(Purple) );
 	gl.uniform2fv( locBox, flatten(score_box) );
     gl.drawArrays( gl.TRIANGLES, 0, coins_collected*6 );
+	
+	gl.bindBuffer( gl.ARRAY_BUFFER, bufferPlayer );
+	gl.bufferData( gl.ARRAY_BUFFER, flatten(player), gl.DYNAMIC_DRAW );
+    gl.vertexAttribPointer( vPosition, 2, gl.FLOAT, false, 0, 0 );
+    gl.uniform2fv( locBox, flatten(box) );
+	gl.uniform4fv( locColor, flatten(playerColor) );
+    gl.drawArrays( gl.TRIANGLES, 0, 3 );
 	
 
     window.requestAnimFrame(render);
