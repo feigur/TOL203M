@@ -69,8 +69,11 @@ var Blue = vec4(0.0, 0.0, 1.0, 1.0);
 var Green = vec4(0.0, 1.0, 0.0, 1.0);
 var Red = vec4(1.0, 0.0, 0.0, 1.0); 
 var Yellow = vec4(1.0, 1.0, 0.0, 1.0);
+var Purple = vec4(1,0,1,1);
+var White = vec4(1,1,1,1);
 var playerColor = Blue;
-var dead = false
+var dead = false;
+var win = false;
 
 var coins_collected = 0;
 window.onload = function init() {
@@ -173,6 +176,7 @@ window.onload = function init() {
 function reset_game(){
 	box = vec2(0,0);
 	dead = false;
+	win = false
 	pY = 0;
 	playerColor = Blue;
 	enemies_box1 = vec2(-0.40,0.0);
@@ -218,13 +222,12 @@ function render(bufferid1, bufferid2) {
 		pY = 0.01
 		dead = true
 	}
-	if (dead == true){
+	if (dead == true || win == true){
 		pY = 0.01;
 		pX = 0.0;
 		player = character_stop;
 		if(box[1] >= 1){
 			reset_game();
-			
 		}
 	}
 	if (enemies_box1[0]-0.06 <= enemies_box2[0] && enemies_box1[0] > enemies_box2[0]){
@@ -238,12 +241,14 @@ function render(bufferid1, bufferid2) {
 	
 	if ((box[0]+0.03 >= coin_box[0]-0.01 && box[0]-0.03 <= coin_box[0]+0.01) && (box[1] == 0.0 || box[1] == 0.1)){
 		coins_collected += 1
-		coin_box = random_locations[Math.floor(Math.random()*5)]
+		coin_box = vec2(10,10);
 	}
 	
 	if (change > 0.995) coin_box = random_locations[Math.floor(Math.random()*5)];
-	if (coins_collected == 10) reset_game();
-	
+	if (coins_collected == 10){
+		win = true;
+		playerColor = White;
+	}
 
     // Uppfæra staðsetningu
     box[0] += pX;
@@ -289,7 +294,7 @@ function render(bufferid1, bufferid2) {
 	
 	gl.bindBuffer( gl.ARRAY_BUFFER, bufferScore );
     gl.vertexAttribPointer( vPosition, 2, gl.FLOAT, false, 0, 0 );
-	gl.uniform4fv( locColor, flatten(Yellow) );
+	gl.uniform4fv( locColor, flatten(Purple) );
 	gl.uniform2fv( locBox, flatten(score_box) );
     gl.drawArrays( gl.TRIANGLES, 0, coins_collected*6 );
 	
