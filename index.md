@@ -1,6 +1,6 @@
 <b>Heimadæmi 3</b>
 <ul>
-  <li> 1. <a href="Heimadæmi_3/Box_bounce_mod/box-bounce.html">Box_bounce.html</a> (og <a href="Heimadæmi_3/Box_bounce_mod/box-bounce_files/marius/box-bounce.js.download">Box_bounce.js</a>)</li> 
+  <li> 1. <a href="Heimadæmi_3/Box_bounce_mod/box-bounce.html">Box_bounce.html</a> (og <a href="Heimadæmi_3/Box_bounce_mod/box-bounce_files/box-bounce.js.download">Box_bounce.js</a>)</li> 
 </ul>
 
 <b>Verkefni 1</b>
