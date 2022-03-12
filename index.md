@@ -1,6 +1,6 @@
 <b>Heimadæmi 5</b>
 <ul>
-  <li> 1. <a href="Heimadæmi_5/PhongKula bling/PhongKula-Phong.html">Vegasalt.html</a> (og <a href="Heimadæmi_5/PhongKula bling/PhongKula-Phong_files/PhongKula.js.download">Vegasalt.js</a>)
+  <li> 1. <a href="Heimadæmi_5/PhongKula bling/PhongKula-Phong.html">Vegasalt.html</a> (og <a href="Heimadæmi_5/PhongKula bling/PhongKula-Phong_files/PhongKula.js.download">Vegasalt.js</a>)</li> 
   <li> 5. <a href="Heimadæmi_5/viewpoints/viewpoints-hus.html">Vegasalt.html</a> (og <a href="Heimadæmi_5/viewpoints/viewpoints-hus_files/viewpoints-hus.js">Vegasalt.js</a>)</li> 
 </ul>
 
