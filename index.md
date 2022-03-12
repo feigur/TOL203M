@@ -2,7 +2,7 @@
 <ul>
   <li> 3. <a href="Heimadæmi_4/Tölvuskjár/Tölfuskjár.html">Tölvuskjár.html</a> (og <a href="Heimadæmi_4/Tölvuskjár/Tölfuskjár/Tölfuskjár.js">Tölvuskjár.js</a>)</li> 
   <li> 4. <a href="Heimadæmi_4/Vegasalt/Vegasalt.html">Vegasalt.html</a> (og <a href="Heimadæmi_4/Vegasalt/Vegasalt/Vegasalt.js">Vegasalt.js</a>)</li> 
-  <li> 5. <a href="Heimadæmi_4/Solkerfi/solkerfi-tungl.html">Sólkerfi.html</a> (og <a href="Heimadæmi_4/Solkerfi/solkerfi-tungl_files/solkerfi-tungl.js.download">Sólkerfi.js</a>)</li> 
+  <li> 5. <a href="Heimadæmi_4/Solkerfi/solkerfi-tungl.html">Sólkerfi.html</a> (og <a href="Heimadæmi_4/Solkerfi/solkerfi-tungl_files/solkerfi-tungl.js">Sólkerfi.js</a>)</li> 
 </ul>
 
 <b>Heimadæmi 3</b>
