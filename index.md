@@ -1,3 +1,9 @@
+<b>Heimadæmi 6</b>
+<ul>
+  <li> 3. <a href="h6/PhongCube.html">PhongCube.html</a> (og <a href="h6/PhongCube/PhongCube.js">PhongCube.js</a>)</li> 
+  <li> 4. <a href="h6/TransparentTepottur.html">TransparentTepottur.html</a> (og <a href="Heimadæmi_5/TransparentTepottur_files/PhongTepottur.js.download">PhongTepottur.js</a>)</li> 
+</ul>
+
 <b>Heimadæmi 5</b>
 <ul>
   <li> 1. <a href="Heimadæmi_5/PhongKula bling/PhongKula-Phong.html">Vegasalt.html</a> (og <a href="Heimadæmi_5/PhongKula bling/PhongKula-Phong_files/PhongKula.js.download">Vegasalt.js</a>)</li> 
