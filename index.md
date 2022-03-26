@@ -1,7 +1,7 @@
 <b>Heimadæmi 6</b>
 <ul>
   <li> 2. <a href="h7/Gangur/VeggurGolf.html">Gangur.html</a> (og <a href="h7/Gangur/VeggurGolf_files/VeggurGolf.js.download">Fanastong.js</a>)</li> 
-  <li> 4. <a href="h7/Tölvuskjár/Tölfuskjár.html">Tölvuskjár.html</a> (og <a href="h7/Tölvuskjár/Tölfuskjár/Tölfuskjár.js">Tölvuskjár.js</a>)</li> 
+  <li> 4. <a href="h7/Tölvuskjár/Tölvuskjár.html">Tölvuskjár.html</a> (og <a href="h7/Tölvuskjár/Tölvuskjár/Tölvuskjár.js">Tölvuskjár.js</a>)</li> 
   <li> 5. <a href="h7/Fanastong/Fanastong.html">Fanastong.html</a> (og <a href="h7/Fanastong/Fanastong_files/Fanastong.js.download">Fanastong.js</a>)</li> 
 </ul>
 
