@@ -1,4 +1,4 @@
-<bVerkefni 3</b>
+<b>Verkefni 3</b>
 <ul>
   <li> 2. <a href="V3/Packman.html">Gangur.html</a></li> 
 </ul>
