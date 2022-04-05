@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<!-- saved from url=(0075)https://hjalmtyr.github.io/WebGL-forrit/ThreeJS/19-ball-shadow-texture.html -->
+<html><script>
+(() => {
+/**
+ * This script injected by the installed three.js developer
+ * tools extension.
+ * https://github.com/threejs/three-devtools
+ */
+
+const $devtoolsReady = Symbol('devtoolsReady');
+const $backlog = Symbol('backlog');
+
+// The __THREE_DEVTOOLS__ target is small and light-weight, and collects
+// events triggered until the devtools panel is ready, which is when
+// the events are flushed.
+const target = new class ThreeDevToolsTarget extends EventTarget {
+  constructor() {
+    super();
+    this[$devtoolsReady] = false;
+    this[$backlog] = [];
+    this.addEventListener('devtools-ready', e => {
+      this[$devtoolsReady] = true;
+      for (let event of this[$backlog]) {
+        this.dispatchEvent(event);
+      }
+    }, { once: true });
+  }
+
+  dispatchEvent(event) {
+    if (this[$devtoolsReady] || event.type === 'devtools-ready') {
+      super.dispatchEvent(event);
+    } else {
+      this[$backlog].push(event);
+    }
+  }
+}
+
+Object.defineProperty(window, '__THREE_DEVTOOLS__', {
+  value: target,
+});
+})();
+</script><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		
+		<title>Packman</title> 
+	</head>
+	<body>
+    <div>
+      <p>WASD for movement, no killing, just run</p>
+      <p>Shift for boost, start with 1, more from dash orbs</p>
+      <p>Space for jump, start with 1, more from jump orbs</p>
+      <p>C to toggle 1st and 3rd person</p>
+    </div>
+        <canvas id="c" width="1600" height="800"></canvas>
+		<script src="./Packman/three.js"></script>
+        <script src="./Packman/OrbitControls.js"></script>
+		<script>
+            // Ná í striga
+const canvas = document.querySelector('#c');
+
+            // author: Fyrestar <info@mevedia.com>
+var camera, scene, renderer, packman, goal, keys;
+
+var time = 0;
+var newPosition = new THREE.Vector3();
+var matrix = new THREE.Matrix4();
+
+var stopper = 1;
+var DEGTORAD = 0.01745327;
+var temp = new THREE.Vector3;
+var dir = new THREE.Vector3;
+var a = new THREE.Vector3;
+var b = new THREE.Vector3;
+var coronaSafetyDistance = 2;
+var velocity = 0.0;
+var speed = 0.0;
+
+
+var walls = [];
+
+var first_thrid = false;
+
+var fps;
+
+var turbo = 0;
+
+var dashTimer = new Date(2000,1,1,1,1,1,1);
+var jumpTimer = new Date(2000,1,1,1,1,1,1);
+
+var Xenable = false;
+var Zenable = false;
+
+var fade_counter = 0;
+
+var ghosts = [];
+var ghostsMove = [];
+var ghostSpeed = 0.1;
+var jump;
+var jumpCount;
+
+var orbJump = []
+var orbDash = []
+var orbScore = []
+
+var won = false
+var winCD = new Date();
+
+
+
+init();
+first_time();
+animate();
+
+function first_time(){
+  keys = {
+    a: false,
+    s: false,
+    d: false,
+    w: false
+  };
+  document.body.addEventListener( 'keydown', function(e) {
+    
+    var key = e.code.replace('Key', '').toLowerCase();
+    if ( keys[ key ] !== undefined )
+      keys[ key ] = true;
+    else if(e.code == "KeyC"){
+      first_thrid = !first_thrid;
+    }
+    else if(e.code == "ShiftLeft"){
+      var buff_dashTimer = new Date();
+      if(buff_dashTimer.getTime() - dashTimer.getTime() > 2000){
+        if(dashCount > 0){
+          dashTimer = buff_dashTimer;
+          turbo = 30;
+          dashCount -= 1;
+        }
+        
+      }
+    }
+    else if(e.code == "Space"){
+      if(!jump){
+        var buff_jumpTimer = new Date();
+        if(buff_jumpTimer.getTime()-jumpTimer.getTime() > 2000){
+          if (jumpCount > 0){
+            jump = true;
+            jumpTimer = buff_jumpTimer
+            jumpCount -= 1;
+          }
+          
+        }
+        
+      }
+    }
+    
+  });
+  document.body.addEventListener( 'keyup', function(e) {
+    
+    var key = e.code.replace('Key', '').toLowerCase();
+    if ( keys[ key ] !== undefined )
+      keys[ key ] = false;
+    });
+}
+function init_vals(){
+  camera, scene, renderer, packman, goal, keys;
+
+  time = 0;
+  newPosition = new THREE.Vector3();
+  matrix = new THREE.Matrix4();
+
+  stopper = 1;
+  DEGTORAD = 0.01745327;
+  temp = new THREE.Vector3;
+  dir = new THREE.Vector3;
+  a = new THREE.Vector3;
+  b = new THREE.Vector3;
+  coronaSafetyDistance = 2;
+  velocity = 0.0;
+  speed = 0.0;
+
+
+  walls = [];
+
+
+  fps;
+
+  turbo = 0;
+
+  dashTimer = new Date(2000,1,1,1,1,1,1);
+
+  Xenable = false;
+  Zenable = false;
+
+  fade_counter = 0;
+
+  ghosts = [];
+  ghostsMove = [];
+  ghostSpeed = 0.04;
+
+  jump = false;
+  jumpCount = 1;
+  dashCount = 1;
+
+  orbJump = []
+  orbDash = []
+  orbScore = []
+  winCD = new Date();
+}
+
+function init() {
+    init_vals()
+
+    camera = new THREE.PerspectiveCamera( 70, canvas.clientWidth / canvas.clientHeight, 0.01, 1000 );
+    camera.position.set( 0, 1, 0 );
+    
+    fps = new THREE.PerspectiveCamera( 90, canvas.clientWidth / canvas.clientHeight, 0.01, 1000 );
+    fps.rotation.x = 0.03
+    scene = new THREE.Scene();
+    camera.lookAt( scene.position );
+
+    var loader = new THREE.TextureLoader();
+    loader.load( 'Packman/pacman.webp', function ( texture ) {
+
+    var geometry = new THREE.SphereGeometry( 0.25, 90, 90 );
+    var material = new THREE.MeshBasicMaterial({color:0xff4f00, map:texture});
+    //var material = new THREE.MeshBasicMaterial({color:0xffff00});
+    
+    packman = new THREE.Mesh( geometry, material );
+    packman.position.y = 0.5
+    packman.rotation.z = 0.4
+    packman.rotation.x = 0.3
+    
+    goal = new THREE.Object3D;
+    follow = new THREE.Object3D;
+    goal.position.z = -coronaSafetyDistance;
+    goal.add( camera );
+    scene.add( packman );
+    });
+    var wall_geom;
+    var wall_mat;
+    var wall;
+    loader.load( 'Packman/cool.webp', function ( texture ) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set( 20, 1 );
+    wall_geom = new THREE.BoxBufferGeometry( 20.5, 0.6, 0.1 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(0,0.3,10);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(0,0.3,-10);
+    walls.push(wall);
+    scene.add(wall);
+    
+
+    wall_geom = new THREE.BoxBufferGeometry( 0.1, 0.6, 20.5 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(10,0.3,0);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-10,0.3,0);
+    walls.push(wall);
+    scene.add(wall);
+    });
+    loader.load( 'Packman/cool.webp', function ( texture ) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set( 7, 1 );
+    wall_geom = new THREE.BoxBufferGeometry( 7, 0.6, 0.1 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(4.5,0.3,8);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-4.5,0.3,8);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(4.5,0.3,-8);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-4.5,0.3,-8);
+    walls.push(wall);
+    scene.add(wall);
+    });
+
+    loader.load( 'Packman/cool.webp', function ( texture ) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set( 5, 1 );
+    wall_geom = new THREE.BoxBufferGeometry( 0.1, 0.6, 5.1 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(1,0.3,3.5);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-1,0.3,3.5);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(1,0.3,-3.5);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-1,0.3,-3.5);
+    walls.push(wall);
+    scene.add(wall);
+    });
+
+    loader.load( 'Packman/cool.webp', function ( texture ) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set( 3, 1 );
+    wall_geom = new THREE.BoxBufferGeometry( 3, 0.6, 0.1 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(2.5,0.3,1);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-2.5,0.3,1);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(2.5,0.3,-1);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-2.5,0.3,-1);
+    walls.push(wall);
+    scene.add(wall);
+    });
+
+    loader.load( 'Packman/cool.webp', function ( texture ) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set( 6, 1 );
+    wall_geom = new THREE.BoxBufferGeometry( 0.1, 0.6, 6 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(6,0.3,0);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-6,0.3,0);
+    walls.push(wall);
+    scene.add(wall);
+    });
+
+    loader.load( 'Packman/cool.webp', function ( texture ) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set( 3, 1 );
+    wall_geom = new THREE.BoxBufferGeometry( 0.1, 0.6, 3 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(3,0.3,4.5);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-3,0.3,4.5);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(3,0.3,-4.5);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-3,0.3,-4.5);
+    walls.push(wall);
+    scene.add(wall);
+    });
+
+    loader.load( 'Packman/cool.webp', function ( texture ) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set( 1, 1 );
+    wall_geom = new THREE.BoxBufferGeometry( 1.1, 0.6, 0.1 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(3.5,0.3,3);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-3.5,0.3,3);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(3.5,0.3,-3);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-3.5,0.3,-3);
+    walls.push(wall);
+    scene.add(wall);
+    });
+
+    loader.load( 'Packman/cool.webp', function ( texture ) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set( 5, 1 );
+    wall_geom = new THREE.BoxBufferGeometry( 5.1, 0.6, 0.1 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(5.5,0.3,6);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-5.5,0.3,6);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(5.5,0.3,-6);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-5.5,0.3,-6);
+    walls.push(wall);
+    scene.add(wall);
+    });
+
+    loader.load( 'Packman/cool.webp', function ( texture ) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set( 5, 1 );
+    wall_geom = new THREE.BoxBufferGeometry( 0.1, 0.6, 5.1 );
+    wall_mat = new THREE.MeshBasicMaterial({map: texture});
+    wall = new THREE.Mesh( wall_geom, wall_mat );
+    wall.position.set(8,0.3,3.5);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-8,0.3,3.5);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(8,0.3,-3.5);
+    walls.push(wall);
+    scene.add(wall);
+    wall = wall.clone();
+    wall.position.set(-8,0.3,-3.5);
+    walls.push(wall);
+    scene.add(wall);
+    });
+    
+    //-----------draugar-----------
+    loader.load( 'Packman/ghost.jpg', function ( texture ) {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set( 2, 1 );
+      var geometry = new THREE.CylinderGeometry( 0.5, 0.5, 1, 32 );
+      var material = new THREE.MeshBasicMaterial( {map: texture} );
+      var cylinder = new THREE.Mesh( geometry, material );
+      
+      cylinder.position.set(9,0.5,9);
+      ghosts.push(cylinder);
+      ghostsMove.push([0,0])
+      scene.add( cylinder );
+
+      cylinder = cylinder.clone();
+      cylinder.position.set(-9,0.5,-9);
+      ghosts.push(cylinder);
+      ghostsMove.push([0,0])
+      scene.add( cylinder );
+
+      cylinder = cylinder.clone();
+      cylinder.position.set(9,0.5,-9);
+      ghosts.push(cylinder);
+      ghostsMove.push([0,0])
+      scene.add( cylinder );
+
+      cylinder = cylinder.clone();
+      cylinder.position.set(-9,0.5,9);
+      ghosts.push(cylinder);
+      ghostsMove.push([0,0])
+      scene.add( cylinder );
+      
+      cylinder = cylinder.clone();
+      cylinder.position.set(2,0.5,2);
+      ghosts.push(cylinder);
+      ghostsMove.push([0,0])
+      scene.add( cylinder );
+
+      cylinder = cylinder.clone();
+      cylinder.position.set(-2,0.5,-2);
+      ghosts.push(cylinder);
+      ghostsMove.push([0,0])
+      scene.add( cylinder );
+
+      cylinder = cylinder.clone();
+      cylinder.position.set(2,0.5,-2);
+      ghosts.push(cylinder);
+      ghostsMove.push([0,0])
+      scene.add( cylinder );
+
+      cylinder = cylinder.clone();
+      cylinder.position.set(-2,0.5,2);
+      ghosts.push(cylinder);
+      ghostsMove.push([0,0])
+      scene.add( cylinder );
+    });
+
+    loader.load( 'Packman/score.jpg', function ( texture ) {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set( 1, 1 );
+      var geometry = new THREE.BoxBufferGeometry( 0.1, 0.1, 0.1 );
+      var material = new THREE.MeshBasicMaterial( {map: texture} );
+      var orbS = new THREE.Mesh( geometry, material );
+      orbS = orbS.clone();
+      for (let i = 3.5; i < 8.5; i++){
+        orbS.position.set(i,0.3,5.5);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 3.5; i < 8.5; i++){
+        orbS.position.set(-i,0.3,5.5);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 3.5; i < 8.5; i++){
+        orbS.position.set(i,0.3,-5.5);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 3.5; i < 8.5; i++){
+        orbS.position.set(-i,0.3,-5.5);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 4.5; i > 2.5; i--){
+        orbS.position.set(3.5,0.3,i);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 4.5; i > 2.5; i--){
+        orbS.position.set(3.5,0.3,-i);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 4.5; i > 2.5; i--){
+        orbS.position.set(-3.5,0.3,i);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 4.5; i > 2.5; i--){
+        orbS.position.set(-3.5,0.3,-i);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = -9.5; i < 10; i++){
+        orbS.position.set(9,0.3,i);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = -9.5; i < 10; i++){
+        orbS.position.set(-9,0.3,i);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = -9.5; i < 10; i++){
+        orbS.position.set(i,0.3,9);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = -9.5; i < 10; i++){
+        orbS.position.set(i,0.3,-9);
+        orbScore.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+    });
+
+
+    loader.load( 'Packman/jump.webp', function ( texture ) {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set( 1, 1 );
+      var geometry = new THREE.BoxBufferGeometry( 0.4, 0.4, 0.4 );
+      var material = new THREE.MeshBasicMaterial( {map: texture} );
+      var orbS = new THREE.Mesh( geometry, material );
+      orbS = orbS.clone();
+      for (let i = -5; i < 6; i+= 10){
+        orbS.position.set(i,0.6,0);
+        orbJump.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = -5; i < 6; i+= 10){
+        orbS.position.set(0,0.6,i);
+        orbJump.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+    });
+
+
+    loader.load( 'Packman/dash.jpg', function ( texture ) {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set( 1, 1 );
+      var geometry = new THREE.BoxBufferGeometry( 0.4, 0.4, 0.4 );
+      var material = new THREE.MeshBasicMaterial( {map: texture} );
+      var orbS = new THREE.Mesh( geometry, material );
+      orbS = orbS.clone();
+      for (let i = 2; i < 8; i+= 5){
+        orbS.position.set(2,0.6,i);
+        orbDash.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 2; i < 8; i+= 5){
+        orbS.position.set(2,0.6,-i);
+        orbDash.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 2; i < 8; i+= 5){
+        orbS.position.set(-2,0.6,i);
+        orbDash.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+      for (let i = 2; i < 8; i+= 5){
+        orbS.position.set(-2,0.6,-i);
+        orbDash.push(orbS);
+        scene.add( orbS );
+        orbS = orbS.clone();
+      }
+
+    });
+
+    
+    var gridHelper = new THREE.GridHelper( 20, 20 );
+    scene.add( gridHelper );
+    
+    const light = new THREE.PointLight( 0xff0000, 1, 100 );
+    light.position.set( 0, 10, 0 );
+    scene.add( light );
+
+    renderer = new THREE.WebGLRenderer( {canvas, antialias: true } );
+    renderer.setSize( canvas.clientWidth , canvas.clientHeight );
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  
+
+  
+
+}
+
+
+
+function detectCollisionCubes(object1, objects){
+  for (let i = 0; i < objects.length; i++) {
+    var object2 = objects[i];
+    
+    object1.geometry.computeBoundingBox();
+    object2.geometry.computeBoundingBox();
+    object1.updateMatrixWorld();
+    object2.updateMatrixWorld();
+    
+    var box1 = object1.geometry.boundingBox.clone();
+    box1.applyMatrix4(object1.matrixWorld);
+
+    var box2 = object2.geometry.boundingBox.clone();
+    box2.applyMatrix4(object2.matrixWorld);
+
+    if(box1.intersectsBox(box2)){
+      return true;
+    }
+    
+  };
+  return false;
+}
+
+function detectCollisionGhosts(){
+  object1 = packman.clone()
+  for (let i = 0; i < ghosts.length; i++) {
+    var object2 = ghosts[i];
+    
+    object1.geometry.computeBoundingBox();
+    object2.geometry.computeBoundingBox();
+    object1.updateMatrixWorld();
+    object2.updateMatrixWorld();
+    
+    var box1 = object1.geometry.boundingBox.clone();
+    box1.applyMatrix4(object1.matrixWorld);
+
+    var box2 = object2.geometry.boundingBox.clone();
+    box2.applyMatrix4(object2.matrixWorld);
+
+    if(box1.intersectsBox(box2)){
+      return true;
+    }
+    
+  };
+  return false;
+}
+
+function detectCollisionOrbs(){
+  detectCollisionOrbScore();
+  detectCollisionOrbJump();
+  detectCollisionOrbDash();
+}
+
+function detectCollisionOrbScore(){
+  object1 = packman.clone()
+  for (let i = 0; i < orbScore.length; i++) {
+    var object2 = orbScore[i];
+    
+    object1.geometry.computeBoundingBox();
+    object2.geometry.computeBoundingBox();
+    object1.updateMatrixWorld();
+    object2.updateMatrixWorld();
+    
+    var box1 = object1.geometry.boundingBox.clone();
+    box1.applyMatrix4(object1.matrixWorld);
+
+    var box2 = object2.geometry.boundingBox.clone();
+    box2.applyMatrix4(object2.matrixWorld);
+
+    if(box1.intersectsBox(box2)){
+      scene.remove(object2);
+      orbScore.splice(i,1);
+      return true;
+    }
+    
+  };
+  return false;
+}
+
+function detectCollisionOrbJump(){
+  object1 = packman.clone()
+  for (let i = 0; i < orbJump.length; i++) {
+    var object2 = orbJump[i];
+    
+    object1.geometry.computeBoundingBox();
+    object2.geometry.computeBoundingBox();
+    object1.updateMatrixWorld();
+    object2.updateMatrixWorld();
+    
+    var box1 = object1.geometry.boundingBox.clone();
+    box1.applyMatrix4(object1.matrixWorld);
+
+    var box2 = object2.geometry.boundingBox.clone();
+    box2.applyMatrix4(object2.matrixWorld);
+
+    if(box1.intersectsBox(box2)){
+      scene.remove(object2);
+      orbJump.splice(i,1);
+      jumpCount += 1
+      return true;
+    }
+    
+  };
+  return false;
+}
+
+function detectCollisionOrbDash(){
+  object1 = packman.clone()
+  for (let i = 0; i < orbDash.length; i++) {
+    var object2 = orbDash[i];
+    
+    object1.geometry.computeBoundingBox();
+    object2.geometry.computeBoundingBox();
+    object1.updateMatrixWorld();
+    object2.updateMatrixWorld();
+    
+    var box1 = object1.geometry.boundingBox.clone();
+    box1.applyMatrix4(object1.matrixWorld);
+
+    var box2 = object2.geometry.boundingBox.clone();
+    box2.applyMatrix4(object2.matrixWorld);
+
+    if(box1.intersectsBox(box2)){
+      scene.remove(object2);
+      orbDash.splice(i,1);
+      dashCount += 1
+      return true;
+    }
+    
+  };
+  return false;
+}
+
+function moveGhosts(){
+  changeMove();
+  for (let i = 0; i < ghosts.length; i++){
+    ghosts[i].position.x += ghostsMove[i][0]
+    ghosts[i].position.z += ghostsMove[i][1]
+  }
+}
+
+
+
+function checkRangeX(ghost,n){
+  return (ghost.position.x >= n-(ghostSpeed/2) && ghost.position.x <= n+(ghostSpeed/2))
+}
+function checkRangeZ(ghost,n){
+  return (ghost.position.z >= n-(ghostSpeed/2) && ghost.position.z <= n+(ghostSpeed/2))
+}
+
+function changeMove(){
+  var randMove;
+  for (let i = 0; i < ghosts.length; i++){
+    if(checkRangeX(ghosts[i],9) && checkRangeZ(ghosts[i],9)){
+      if(Math.random() > 0.5){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else{
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+      
+    }
+    else if(checkRangeX(ghosts[i],-9) && checkRangeZ(ghosts[i],9)){
+      if(Math.random() > 0.5){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else{
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+      
+    }
+    else if(checkRangeX(ghosts[i],9) && checkRangeZ(ghosts[i],-9)){
+      if(Math.random() > 0.5){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else{
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      
+    }
+    else if(checkRangeX(ghosts[i],-9) && checkRangeZ(ghosts[i],-9)){
+      if(Math.random() > 0.5){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else{
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      
+    }
+    else if(checkRangeX(ghosts[i],0) && checkRangeZ(ghosts[i],9)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else{
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-9) && checkRangeZ(ghosts[i],0)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+      else{
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+    }
+    else if(checkRangeX(ghosts[i],0) && checkRangeZ(ghosts[i],-9)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else{
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],9) && checkRangeZ(ghosts[i],0)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+      else{
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+    }
+    else if(checkRangeX(ghosts[i],7) && checkRangeZ(ghosts[i],0)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else{
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-7) && checkRangeZ(ghosts[i],0)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else{
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],0) && checkRangeZ(ghosts[i],7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else{
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],0) && checkRangeZ(ghosts[i],-7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else{
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],9) && checkRangeZ(ghosts[i],7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+      else{
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-9) && checkRangeZ(ghosts[i],7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+      else{
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+    }
+    else if(checkRangeX(ghosts[i],9) && checkRangeZ(ghosts[i],-7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+      else{
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-9) && checkRangeZ(ghosts[i],-7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else if (randMove > 0.33){
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+      else{
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+    }
+    else if(checkRangeX(ghosts[i],7) && checkRangeZ(ghosts[i],4)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],7) && checkRangeZ(ghosts[i],-4)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-7) && checkRangeZ(ghosts[i],4)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-7) && checkRangeZ(ghosts[i],-4)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],5) && checkRangeZ(ghosts[i],4)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],5) && checkRangeZ(ghosts[i],-4)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-5) && checkRangeZ(ghosts[i],4)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-5) && checkRangeZ(ghosts[i],-4)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],5) && checkRangeZ(ghosts[i],0)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-5) && checkRangeZ(ghosts[i],0)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],5) && checkRangeZ(ghosts[i],2)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],5) && checkRangeZ(ghosts[i],-2)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-5) && checkRangeZ(ghosts[i],2)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-5) && checkRangeZ(ghosts[i],-2)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],2) && checkRangeZ(ghosts[i],7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-2) && checkRangeZ(ghosts[i],7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],2) && checkRangeZ(ghosts[i],-7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-2) && checkRangeZ(ghosts[i],-7)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.66){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else if(randMove > 0.33){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],2) && checkRangeZ(ghosts[i],2)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],2) && checkRangeZ(ghosts[i],-2)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-2) && checkRangeZ(ghosts[i],2)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+    }
+    else if(checkRangeX(ghosts[i],-2) && checkRangeZ(ghosts[i],-2)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.50){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else {
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+    }
+    
+    
+
+
+    else if(checkRangeX(ghosts[i],0) && checkRangeZ(ghosts[i],0)){
+      randMove = Math.random().valueOf()
+      
+      if(randMove > 0.75){
+        ghostsMove[i] = [0,ghostSpeed]
+      }
+      else if (randMove > 0.5){
+        ghostsMove[i] = [0,-ghostSpeed]
+      }
+      else if (randMove > 0.25){
+        ghostsMove[i] = [-ghostSpeed,0]
+      }
+      else{
+        ghostsMove[i] = [ghostSpeed,0]
+      }
+    }
+  }
+}
+
+function animate() {
+
+  requestAnimationFrame( animate );
+  moveGhosts();
+  if ( keys.a )
+    packman.rotation.y +=0.06;
+  else if ( keys.d )
+    packman.rotation.y -=0.06;
+  if(turbo == 0){
+    speed = 0.04;
+  }
+  else{
+    speed = 0.1;
+    turbo -= 1;
+  }
+  var Xdir = Math.cos(-packman.rotation.y);
+  var Zdir = Math.sin(-packman.rotation.y);
+  var buff;
+  if ( keys.w ){
+    buff = packman.clone()
+    buff.position.x += speed*2.5*Xdir;
+    if(!detectCollisionCubes(buff,walls)){
+      Xenable = true;
+    }
+    buff = packman.clone()
+    buff.position.z += speed*2.5*Zdir;
+    if(!detectCollisionCubes(buff,walls)){
+      Zenable = true;
+    }
+    if(Xenable){
+      packman.position.x += speed*Xdir;
+      Xenable = false;
+    }
+    if(Zenable){
+      packman.position.z += speed*Zdir;
+      Zenable = false;
+    }
+    if(detectCollisionCubes(packman,walls)){
+      if(fade_counter < 50){
+        packman.position.x -= speed*1.5*Xdir;
+        
+      }
+      else{
+        packman.position.x += speed*1.5*Xdir;
+      }
+      fade_counter += 1
+    }
+    else{
+      fade_counter = 0;
+    }
+    if(detectCollisionCubes(packman,walls)){
+      if(fade_counter < 50){
+        packman.position.z -= speed*1.5*Zdir;
+      }
+      else{
+        packman.position.z += speed*1.5*Zdir;
+      }
+      
+      fade_counter += 1;
+    }
+    else{
+      fade_counter = 0;
+    }
+  }
+  else if ( keys.s ){
+    buff = packman.clone()
+    buff.position.x -= speed*2.5*Xdir;
+    if(!detectCollisionCubes(buff,walls)){
+      
+      Xenable = true;
+    }
+    
+    buff = packman.clone()
+    buff.position.z -= speed*2.5*Zdir;
+    if(!detectCollisionCubes(buff,walls)){
+      Zenable = true;
+    }
+    if(Xenable){
+      packman.position.x -= speed*Xdir;
+      Xenable = false;
+    }
+    if(Zenable){
+      packman.position.z -= speed*Zdir;
+      Zenable = false;
+    }
+    if(detectCollisionCubes(packman,walls)){
+      if(fade_counter < 50){
+        packman.position.x += speed*1.5*Xdir;
+      }
+      else{
+        packman.position.x -= speed*1.5*Xdir;
+      }
+      
+      fade_counter += 1;
+    }
+    else{
+      fade_counter = 0;
+    }
+    if(detectCollisionCubes(packman,walls)){
+      if(fade_counter < 50){
+        packman.position.z += speed*1.5*Zdir;
+      }
+      else{
+        packman.position.z -= speed*1.5*Zdir;
+      }
+      fade_counter += 1
+    }
+    else{
+      fade_counter = 0;
+    }
+  }
+
+  
+  if(detectCollisionGhosts()){
+    init();
+  }
+  
+  if(jump){
+    if(packman.position.y < 2){
+      packman.position.y += 0.1;
+    }
+    else{
+      jump = false;
+    }
+  }
+  else if (packman.position.x > 10 || packman.position.x < -10 || packman.position.z > 10 || packman.position.z < -10 || (packman.position.y >= 0.55 || packman.position.y <= 0.45)){
+    buff = packman.clone();
+    buff.position.y -= 0.1;
+    if(!detectCollisionCubes(buff,walls)){
+      packman.position.y -= 0.1
+    }
+    
+  }
+
+  if(packman.position.y < -10){
+    packman.position.set(0,0.5,0)
+  }
+  
+  detectCollisionOrbs();
+  a.lerp(packman.position, 0.4);
+  b.copy(goal.position);
+  
+  dir.copy( a ).sub( b ).normalize();
+  const dis = a.distanceTo( b ) - coronaSafetyDistance;
+  goal.position.addScaledVector( dir, dis );
+  //temp.setFromMatrixPosition(goal.matrixWorld);
+
+  //camera.position.lerp(temp, 0.2);
+  camera.lookAt( packman.position );
+  //camera.lookAt( ghosts[0].position);
+
+  console.log(orbScore.length)
+  console.log(won)
+  if(orbScore.length == 0 && new Date().getTime() - winCD > 1000){
+    for(let i = 0; i < ghosts.length; i++){
+      scene.remove(ghosts[i])
+    }
+    won = true;
+    winCD = new Date();
+  }
+  if(won == true){
+    var buff_time = new Date();
+    if(buff_time.getTime()-winCD > 10000){
+      won = false;
+      console.log("huh")
+      init()
+    }
+  }
+  
+  if(!first_thrid){
+    renderer.render( scene, camera );
+  }
+  else{
+    fps.position.set(packman.position.x,packman.position.y+0.2,packman.position.z)
+    fps.rotation.y = packman.rotation.y-(90*(Math.PI/180));
+    renderer.render( scene, fps );
+  }
+
+}
+		</script>
+	
+</body></html>
