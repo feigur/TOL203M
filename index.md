@@ -1,3 +1,8 @@
+<bVerkefni 3</b>
+<ul>
+  <li> 2. <a href="V3/Packman.html">Gangur.html</a></li> 
+</ul>
+
 <b>Heimadæmi 6</b>
 <ul>
   <li> 2. <a href="h7/Gangur/VeggurGolf.html">Gangur.html</a> (og <a href="h7/Gangur/VeggurGolf_files/VeggurGolf.js.download">Fanastong.js</a>)</li> 
