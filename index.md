@@ -1,6 +1,6 @@
 <b>Verkefni 3</b>
 <ul>
-  <li> 2. <a href="V3/Packman.html">Gangur.html</a></li> 
+  <li> 1. <a href="V3/Packman.html">Packman.html</a></li> 
 </ul>
 
 <b>Heimadæmi 6</b>
