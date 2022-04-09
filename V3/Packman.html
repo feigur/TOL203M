@@ -1454,7 +1454,7 @@ function animate() {
 
   console.log(orbScore.length)
   console.log(won)
-  if(orbScore.length == 0 && new Date().getTime() - winCD > 1000){
+  if(orbScore.length == 0 && new Date().getTime() - winCD.getTime() > 10000){
     for(let i = 0; i < ghosts.length; i++){
       scene.remove(ghosts[i])
     }
